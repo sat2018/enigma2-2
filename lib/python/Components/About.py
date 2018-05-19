@@ -1,4 +1,4 @@
-from boxbranding import getImageVersion, getMachineBuild
+from boxbranding import getImageVersion, getMachineBuild, getBoxType
 from sys import modules
 import socket, fcntl, struct
 
@@ -20,8 +20,8 @@ def getEnigmaVersionString():
 def getGStreamerVersionString():
 	try:
 		from glob import glob
-		gst = [x.split("Version: ") for x in open(glob("/var/lib/opkg/info/gstreamer[0-9].[0-9].control")[0], "r") if x.startswith("Version:")][0]
-		return "%s" % gst[1].split("+")[0].replace("\n","")
+ 		gst = [x.split("Version: ") for x in open(glob("/var/lib/opkg/info/gstreamer[0-9].[0-9].control")[0], "r") if x.startswith("Version:")][0]
+                return "%s" % gst[1].split("+")[0].replace("\n","")
 	except:
 		return _("unknown")
 
@@ -56,13 +56,20 @@ def getIsBroadcom():
 		return False
 
 def getChipSetString():
-	try:
-		f = open('/proc/stb/info/chipset', 'r')
-		chipset = f.read()
-		f.close()
-		return str(chipset.lower().replace('\n','').replace('brcm','').replace('bcm',''))
-	except IOError:
-		return _("unavailable")
+	if getBoxType() in ('dm7080','dm820'):
+		return "7435"
+	elif getBoxType() == 'dm525':
+		return "73625"
+	elif getBoxType() == 'dm900':
+		return "7252s"
+	else:
+		try:
+			f = open('/proc/stb/info/chipset', 'r')
+			chipset = f.read()
+			f.close()
+			return str(chipset.lower().replace('\n','').replace('brcm','').replace('bcm',''))
+		except IOError:
+			return _("unavailable")
 
 def getCPUSpeedString():
 	cpu_speed = 0

@@ -302,7 +302,49 @@ void eDBoxLCD::update()
 		}
 		else
 		{
-			write(lcdfd, _buffer, _stride * res.height());
+			FILE *file;
+			FILE *boxtype_file;
+			char boxtype_name[20];
+			if((boxtype_file = fopen("/proc/stb/info/boxtype", "r")) != NULL)
+			{
+				fgets(boxtype_name, sizeof(boxtype_name), boxtype_file);
+				fclose(boxtype_file);
+			}
+			else if((boxtype_file = fopen("/proc/stb/info/model", "r")) != NULL)
+			{
+				fgets(boxtype_name, sizeof(boxtype_name), boxtype_file);
+				fclose(boxtype_file);
+			}
+			if (FILE * file = fopen("/proc/stb/info/gbmodel", "r"))
+			{
+				unsigned char gb_buffer[_stride * res.height()];
+				for (int offset = 0; offset < _stride * res.height(); offset += 2)
+				{
+					gb_buffer[offset] = (_buffer[offset] & 0x1F) | ((_buffer[offset + 1] << 3) & 0xE0);
+					gb_buffer[offset + 1] = ((_buffer[offset + 1] >> 5) & 0x03) | ((_buffer[offset] >> 3) & 0x1C) | ((_buffer[offset + 1] << 5) & 0x60);
+				}
+				write(lcdfd, gb_buffer, _stride * res.height());
+				fclose(file);
+			}
+			else if ((strcmp(boxtype_name, "dm900\n") == 0))
+			{
+				unsigned char gb_buffer[_stride * res.height()];
+				for (int offset = 0; offset < ((_stride * res.height())>>2); offset ++)
+				{
+					unsigned int src = ((unsigned int*)_buffer)[offset];
+					//                                             blue                         red                  green low                     green high
+					((unsigned int*)gb_buffer)[offset] = ((src >> 3) & 0x001F001F) | ((src << 3) & 0xF800F800) | ((src >> 8) & 0x00E000E0) | ((src << 8) & 0x07000700);
+				}
+				write(lcdfd, gb_buffer, _stride * res.height());
+				if (file != NULL)
+				{
+					fclose(file);
+				}
+			}		
+			else
+			{
+				write(lcdfd, _buffer, _stride * res.height());
+			}
 		}
 	}
 	else /* lcd_type == 1 */

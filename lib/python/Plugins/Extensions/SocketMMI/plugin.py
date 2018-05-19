@@ -14,7 +14,9 @@ def menu(menuid, **kwargs):
 def sessionstart(reason, session):
 	global socketHandler
 	if socketHandler is None:
+
 		socketHandler = SocketMMIMessageHandler()
+    
 	socketHandler.setSession(session)
 
 def autostart(reason, **kwargs):

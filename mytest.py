@@ -11,7 +11,7 @@ profile("PYTHON_START")
 # Don't remove this line. It may seem to do nothing, but if removed,
 # it will break output redirection for crash logs.
 import Tools.RedirectOutput
-from boxbranding import getBrandOEM, getImageVersion, getImageBuild, getImageDevBuild, getImageType
+from boxbranding import getBoxType, getBrandOEM, getImageVersion, getImageBuild, getImageDevBuild, getImageType
 print "[Image Type] %s" % getImageType()
 print "[Image Version] %s" % getImageVersion()
 print "[Image Build] %s" % getImageBuild()
@@ -660,6 +660,22 @@ import Components.Lcd
 Components.Lcd.InitLcd()
 Components.Lcd.IconCheck()
 
+if getBoxType() in ('dm7080', 'dm820', 'dm900'): 
+ 	f=open("/proc/stb/hdmi-rx/0/hdmi_rx_monitor","r")
+ 	check=f.read()
+ 	f.close()
+ 	if check.startswith("on"):
+ 		f=open("/proc/stb/hdmi-rx/0/hdmi_rx_monitor","w")
+ 		f.write("off")
+ 		f.close()
+ 	f=open("/proc/stb/audio/hdmi_rx_monitor","r")
+ 	check=f.read()
+ 	f.close()
+ 	if check.startswith("on"):
+ 		f=open("/proc/stb/audio/hdmi_rx_monitor","w")
+ 		f.write("off")
+ 		f.close()
+	
 profile("UserInterface")
 import Screens.UserInterfacePositioner
 Screens.UserInterfacePositioner.InitOsdPosition()
