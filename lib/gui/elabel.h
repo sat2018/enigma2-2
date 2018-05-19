@@ -33,7 +33,7 @@ public:
 	void setBorderWidth(int size);
 	void setNoWrap(int nowrap);
 	void clearForegroundColor();
-	int getNoWrap() { return m_nowrap; } 
+	int getNoWrap() { return m_nowrap; }
 
 	eSize calculateSize();
 protected:
