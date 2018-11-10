@@ -2,7 +2,7 @@ import locale
 import os
 import skin
 from time import time
-from boxbranding import getBrandOEM, getBoxType
+from boxbranding import getBrandOEM, getBoxType, getDisplayType
 
 from enigma import eDVBDB, eEPGCache, setTunerTypePriorityOrder, setPreferredTuner, setSpinnerOnOff, setEnableTtCachingOnOff, eEnv, Misc_Options, eBackgroundFileEraser, eServiceEvent, RT_HALIGN_LEFT, RT_HALIGN_RIGHT, RT_HALIGN_CENTER, RT_VALIGN_CENTER, RT_WRAP
 
@@ -14,6 +14,7 @@ from Components.NimManager import nimmanager
 from Components.ServiceList import refreshServiceList
 from SystemInfo import SystemInfo
 from Tools.HardwareInfo import HardwareInfo
+
 
 def InitUsageConfig():
 	config.misc.useNTPminutes = ConfigSelection(default = "30", choices = [("30", "30" + " " +_("minutes")), ("60", _("Hour")), ("1440", _("Once per day"))])
@@ -246,6 +247,7 @@ def InitUsageConfig():
 	config.usage.frontend_priority = ConfigSelection(default = "-1", choices = nims)
 	config.usage.recording_frontend_priority = ConfigSelection(default = "-2", choices = rec_nims)
 	config.misc.disable_background_scan = ConfigYesNo(default = False)
+	config.misc.use_ci_assignment = ConfigYesNo(default = False)
 	config.usage.frontend_priority_dvbs = ConfigSelection(default = "-2", choices = list(dvbs_nims))
 	dvbs_nims.insert(1,("-1", _("auto")))
 	config.usage.jobtaskextensions = ConfigYesNo(default = True)
@@ -298,7 +300,33 @@ def InitUsageConfig():
 	config.usage.show_event_progress_in_servicelist.addNotifier(refreshServiceList)
 	config.usage.show_channel_numbers_in_servicelist.addNotifier(refreshServiceList)
 
-	config.usage.blinking_display_clock_during_recording = ConfigYesNo(default = False)
+	#standby
+	if getDisplayType() in ('textlcd7segment'):
+		config.usage.blinking_display_clock_during_recording = ConfigSelection(default = "Rec", choices = [
+						("Rec", _("REC")), 
+						("RecBlink", _("Blinking REC")), 
+						("Nothing", _("Nothing"))])
+	else:
+		config.usage.blinking_display_clock_during_recording = ConfigYesNo(default = False)
+		
+	#in use
+	if getDisplayType() in ('textlcd'):
+		config.usage.blinking_rec_symbol_during_recording = ConfigSelection(default = "Channel", choices = [
+						("Rec", _("REC Symbol")), 
+						("RecBlink", _("Blinking REC Symbol")), 
+						("Channel", _("Channelname"))])
+	if getDisplayType() in ('textlcd7segment'):
+		config.usage.blinking_rec_symbol_during_recording = ConfigSelection(default = "Rec", choices = [
+						("Rec", _("REC")), 
+						("RecBlink", _("Blinking REC")), 
+						("Time", _("Time"))])
+	else:
+		config.usage.blinking_rec_symbol_during_recording = ConfigYesNo(default = True)
+		
+	if getDisplayType() in ('textlcd7segment'):
+		config.usage.show_in_standby = ConfigSelection(default = "time", choices = [
+						("time", _("Time")), 
+						("nothing", _("Nothing"))])
 
 	config.usage.show_message_when_recording_starts = ConfigYesNo(default = True)
 
@@ -923,7 +951,7 @@ def InitUsageConfig():
 	config.autolanguage = ConfigSubsection()
 	default_autoselect = "eng qaa Englisch" # for audio_autoselect1
 	audio_language_choices=[
-		("---", _("None")),
+		("", _("None")),
 		("und", _("Undetermined")),
 		("orj dos ory org esl qaa und mis mul ORY ORJ Audio_ORJ", _("Original")),
 		("ara", _("Arabic")),
@@ -963,27 +991,27 @@ def InitUsageConfig():
 
 	def setEpgLanguage(configElement):
 		eServiceEvent.setEPGLanguage(configElement.value)
-	config.autolanguage.audio_epglanguage = ConfigSelection(audio_language_choices[:1] + audio_language_choices [2:], default="---")
+	config.autolanguage.audio_epglanguage = ConfigSelection(audio_language_choices[:1] + audio_language_choices [2:], default="")
 	config.autolanguage.audio_epglanguage.addNotifier(setEpgLanguage)
 
 	def setEpgLanguageAlternative(configElement):
 		eServiceEvent.setEPGLanguageAlternative(configElement.value)
-	config.autolanguage.audio_epglanguage_alternative = ConfigSelection(audio_language_choices[:1] + audio_language_choices [2:], default="---")
+	config.autolanguage.audio_epglanguage_alternative = ConfigSelection(audio_language_choices[:1] + audio_language_choices [2:], default="")
 	config.autolanguage.audio_epglanguage_alternative.addNotifier(setEpgLanguageAlternative)
 
 	config.autolanguage.audio_autoselect1 = ConfigSelection(choices=audio_language_choices, default=default_autoselect)
-	config.autolanguage.audio_autoselect2 = ConfigSelection(choices=audio_language_choices, default="---")
-	config.autolanguage.audio_autoselect3 = ConfigSelection(choices=audio_language_choices, default="---")
-	config.autolanguage.audio_autoselect4 = ConfigSelection(choices=audio_language_choices, default="---")
+	config.autolanguage.audio_autoselect2 = ConfigSelection(choices=audio_language_choices, default="")
+	config.autolanguage.audio_autoselect3 = ConfigSelection(choices=audio_language_choices, default="")
+	config.autolanguage.audio_autoselect4 = ConfigSelection(choices=audio_language_choices, default="")
 	config.autolanguage.audio_defaultac3 = ConfigYesNo(default = True)
 	config.autolanguage.audio_defaultddp = ConfigYesNo(default = False)
 	config.autolanguage.audio_usecache = ConfigYesNo(default = True)
 
 	subtitle_language_choices = audio_language_choices[:1] + audio_language_choices [2:]
-	config.autolanguage.subtitle_autoselect1 = ConfigSelection(choices=subtitle_language_choices, default="---")
-	config.autolanguage.subtitle_autoselect2 = ConfigSelection(choices=subtitle_language_choices, default="---")
-	config.autolanguage.subtitle_autoselect3 = ConfigSelection(choices=subtitle_language_choices, default="---")
-	config.autolanguage.subtitle_autoselect4 = ConfigSelection(choices=subtitle_language_choices, default="---")
+	config.autolanguage.subtitle_autoselect1 = ConfigSelection(choices=subtitle_language_choices, default="")
+	config.autolanguage.subtitle_autoselect2 = ConfigSelection(choices=subtitle_language_choices, default="")
+	config.autolanguage.subtitle_autoselect3 = ConfigSelection(choices=subtitle_language_choices, default="")
+	config.autolanguage.subtitle_autoselect4 = ConfigSelection(choices=subtitle_language_choices, default="")
 	config.autolanguage.subtitle_hearingimpaired = ConfigYesNo(default = False)
 	config.autolanguage.subtitle_defaultimpaired = ConfigYesNo(default = False)
 	config.autolanguage.subtitle_defaultdvb = ConfigYesNo(default = False)
